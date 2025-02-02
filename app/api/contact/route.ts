@@ -13,22 +13,23 @@ export async function POST(request: Request) {
 			);
 		}
 
-		// Start email sending in background without awaiting
 		const html = getContactFormEmailHTML(name, email, message);
-		sendEmailService(
+
+		// Wait for email to be sent
+		await sendEmailService(
 			"ilanmaouchi@gmail.com",
 			"New Contact Form Submission",
 			html
-		).catch((error) =>
-			console.error("Background email sending failed:", error)
 		);
 
-		// Respond immediately
-		return NextResponse.json({ success: true });
+		return NextResponse.json({
+			status: "OK",
+			message: "Email sent successfully",
+		});
 	} catch (error) {
-		console.error(error);
+		console.error("Contact form error:", error);
 		return NextResponse.json(
-			{ error: "Internal server error" },
+			{ error: "Failed to send email" },
 			{ status: 500 }
 		);
 	}

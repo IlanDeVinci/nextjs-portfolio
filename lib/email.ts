@@ -14,11 +14,7 @@ export const sendEmailService = async (
 			refresh_token: googleEmailConfig.refreshToken,
 		});
 
-		const accessToken = await myOAuth2Client.getAccessToken().catch((error) => {
-			console.error("Failed to get access token:", error);
-			throw new Error("Authentication failed");
-		});
-
+		const accessToken = await myOAuth2Client.getAccessToken();
 		if (!accessToken?.token) {
 			throw new Error("No access token received");
 		}
@@ -33,7 +29,22 @@ export const sendEmailService = async (
 				accessToken: accessToken.token,
 			},
 		};
+
 		const smtpTransport = createTransport(transportOptions);
+
+		// Verify connection
+		await new Promise((resolve, reject) => {
+			smtpTransport.verify((error, success) => {
+				if (error) {
+					console.error("SMTP Connection Error:", error);
+					reject(error);
+				} else {
+					console.log("SMTP Connection Ready");
+					resolve(success);
+				}
+			});
+		});
+
 		const mailOptions = {
 			from: {
 				name: "Portfolio",
@@ -43,7 +54,20 @@ export const sendEmailService = async (
 			subject,
 			html,
 		};
-		await smtpTransport.sendMail(mailOptions);
+
+		// Send email with Promise
+		const info = await new Promise((resolve, reject) => {
+			smtpTransport.sendMail(mailOptions, (error, info) => {
+				if (error) {
+					console.error("Email sending error:", error);
+					reject(error);
+				} else {
+					resolve(info);
+				}
+			});
+		});
+
+		return info;
 	} catch (error: unknown) {
 		if (error instanceof Error) {
 			console.error("Email service error:", error.message);
