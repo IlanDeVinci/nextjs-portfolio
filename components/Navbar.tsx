@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import cn from "classnames";
+import { usePathname } from "next/navigation";
 
 const navItems = ["Skills", "Studies", "Projects", "Experience", "Contact"];
 
 const Navbar = () => {
+	const pathname = usePathname();
 	const [activeItem, setActiveItem] = useState("");
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [, setScrollProgress] = useState(0);
@@ -115,7 +117,11 @@ const Navbar = () => {
 								whileHover={{ scale: 1.05 }}
 								whileTap={{ scale: 0.95 }}>
 								<Link
-									href={`#${item.toLowerCase()}`}
+									href={
+										pathname === "/"
+											? `#${item.toLowerCase()}`
+											: `/#${item.toLowerCase()}`
+									}
 									className={cn(
 										"relative px-4 py-2 rounded-full text-sm font-medium transition-colors font-manrope",
 										activeItem === item
@@ -142,7 +148,11 @@ const Navbar = () => {
 							{navItems.map((item) => (
 								<Link
 									key={item}
-									href={`#${item.toLowerCase()}`}
+									href={
+										pathname === "/"
+											? `#${item.toLowerCase()}`
+											: `/#${item.toLowerCase()}`
+									}
 									onClick={() => setIsMobileMenuOpen(false)}
 									className={cn(
 										"block px-3 py-2 rounded-md text-base font-medium transition-colors",
