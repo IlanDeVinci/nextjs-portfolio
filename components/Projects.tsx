@@ -348,6 +348,26 @@ const Projects = () => {
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [swiperInstance, setSwiperInstance] = useState<SwiperType>();
 
+	// Add preloading effect
+	useEffect(() => {
+		// Wait for initial page load
+		if (typeof window !== "undefined") {
+			// Wait for the page load event
+			window.addEventListener("load", () => {
+				// Collect all unique image URLs
+				const imageUrls = new Set(
+					projects.flatMap((project) => project.images)
+				);
+
+				// Preload each image
+				imageUrls.forEach((url) => {
+					const img = new window.Image(0, 0) as HTMLImageElement;
+					img.src = url;
+				});
+			});
+		}
+	}, []);
+
 	// Add initialization effect
 	useEffect(() => {
 		if (swiperInstance) {
