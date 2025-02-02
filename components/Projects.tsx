@@ -6,6 +6,7 @@ import Image from "next/image";
 import { FaGithub } from "react-icons/fa";
 import { FiExternalLink } from "react-icons/fi";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
 import {
 	Navigation,
 	Pagination,
@@ -345,7 +346,7 @@ const ProjectCard = ({ project, isActive }: ProjectProps) => {
 
 const Projects = () => {
 	const [activeIndex, setActiveIndex] = useState(0);
-	const [swiperInstance, setSwiperInstance] = useState<any>(null);
+	const [swiperInstance, setSwiperInstance] = useState<SwiperType>();
 
 	// Add initialization effect
 	useEffect(() => {
