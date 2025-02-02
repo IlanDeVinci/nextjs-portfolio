@@ -361,65 +361,73 @@ const Projects = () => {
 				<div className="mt-12 relative overflow-hidden">
 					<style
 						jsx
-						global>{`
-						.swiper {
-							overflow: hidden !important;
-							position: relative;
-							padding: 2rem 0 !important;
-						}
-						.swiper-wrapper {
-							transition-timing-function: ease-out !important;
-							align-items: center;
-							pointer-events: none !important;
-						}
-						.swiper-slide {
-							transition: all 0.6s ease-out;
-							opacity: 0.3;
-							transform: scale(0.8);
-							pointer-events: none;
-						}
-						.swiper-slide-active {
-							opacity: 1;
-							transform: scale(1);
-							pointer-events: auto;
-						}
-						.swiper-slide-prev,
-						.swiper-slide-next {
-							opacity: 0.6;
-							transform: scale(0.9);
-							pointer-events: auto;
-						}
-						.swiper-button-prev,
-						.swiper-button-next {
-							color: rgb(147, 51, 234) !important;
-							transform: translateY(-50%) !important;
-							transition: all 0.3s ease;
-							background: rgba(88, 28, 135, 0.3);
-							border-radius: 50%;
-							width: 40px !important;
-							height: 40px !important;
-							backdrop-filter: blur(4px);
-						}
-						.swiper-button-prev:hover,
-						.swiper-button-next:hover {
-							background: rgba(147, 51, 234, 0.4);
-						}
-						.swiper-button-prev:after,
-						.swiper-button-next:after {
-							font-size: 1.2rem !important;
-						}
-						.swiper-pagination-bullet {
-							background: rgba(147, 51, 234, 0.5) !important;
-							opacity: 0.5;
-							transition: all 0.3s ease;
-						}
-						.swiper-pagination-bullet-active {
-							background: rgb(147, 51, 234) !important;
-							opacity: 1;
-							width: 20px;
-							border-radius: 4px;
-						}
-					`}</style>
+						global>
+						{`
+							.swiper {
+								overflow: hidden !important;
+								position: relative;
+								padding: 2rem 0 !important;
+							}
+							.swiper-wrapper {
+								transition-timing-function: ease-out !important;
+								align-items: center;
+								pointer-events: none !important;
+							}
+							.swiper-slide {
+								transition: all 0.6s ease-out;
+								opacity: 0.3;
+								transform: scale(0.8);
+								pointer-events: none;
+							}
+							.swiper-slide-active {
+								opacity: 1;
+								transform: scale(1);
+								pointer-events: auto;
+							}
+							.swiper-slide-prev,
+							.swiper-slide-next {
+								opacity: 0.6;
+								transform: scale(0.9);
+								pointer-events: auto;
+							}
+							.swiper-button-prev,
+							.swiper-button-next {
+								color: rgb(147, 51, 234) !important;
+								transform: translateY(-50%) !important;
+								transition: all 0.3s ease;
+								background: rgba(88, 28, 135, 0.3);
+								border-radius: 50%;
+								width: 50px !important; /* Increased from 40px */
+								height: 50px !important; /* Increased from 40px */
+								backdrop-filter: blur(4px);
+							}
+							.swiper-button-prev {
+								left: 100px;
+							}
+							.swiper-button-next {
+								right: 100px;
+							}
+							.swiper-button-prev:hover,
+							.swiper-button-next:hover {
+								background: rgba(147, 51, 234, 0.4);
+							}
+							.swiper-button-prev:after,
+							.swiper-button-next:after {
+								font-size: 1.5rem !important;
+							}
+							.swiper-pagination-bullet {
+								background: rgba(147, 51, 234, 0.5) !important;
+								opacity: 0.5;
+								transition: all 0.3s ease;
+							}
+							.swiper-pagination-bullet-active {
+								background: rgb(147, 51, 234) !important;
+								opacity: 1;
+								width: 20px;
+								border-radius: 4px;
+							}
+						`}
+					</style>
 					{/* Add mask overlay */}
 					<div className="absolute inset-0 z-10 pointer-events-none [animation:none]">
 						<div className="absolute inset-y-0 left-0 w-[15%] bg-gradient-to-r from-background to-transparent [animation:none]" />
