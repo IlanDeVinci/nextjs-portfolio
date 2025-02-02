@@ -50,8 +50,7 @@ const ContactForm = () => {
 		<section
 			id="contact"
 			className="py-20 relative overflow-hidden">
-			{/* Brighter, matching gradient background */}
-			<div className="absolute inset-0 bg-gradient-to-b from-[#0f0628]/90 via-[#0f0628]/80 to-[#0f0628]/70 pointer-events-none" />
+			<div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f0628] pointer-events-none" />
 			<div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
