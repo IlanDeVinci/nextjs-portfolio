@@ -421,21 +421,21 @@ const Projects = () => {
 								backdrop-filter: blur(4px);
 
 								@media (max-width: 768px) {
-									top: auto !important;
 									bottom: 0 !important;
+									top: 20% !important;
 									transform: none !important;
 								}
 							}
 							.swiper-button-prev {
 								left: 100px;
 								@media (max-width: 768px) {
-									left: 30% !important;
+									left: 5% !important;
 								}
 							}
 							.swiper-button-next {
 								right: 100px;
 								@media (max-width: 768px) {
-									right: 30% !important;
+									right: 5% !important;
 								}
 							}
 							.swiper-button-prev:hover,

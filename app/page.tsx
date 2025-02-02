@@ -83,13 +83,13 @@ export default function Page() {
 						<div className="relative">
 							<section
 								id="skills"
-								className="min-h-screen py-8 md:py-16">
+								className="min-h-screen py-12 md:py-16">
 								{" "}
 								{/* Reduced padding */}
 								<Skills />
 							</section>
 						</div>
-						<div className="relative overflow-hidden -mt-32">
+						<div className="relative overflow-hidden -mt-24">
 							{" "}
 							{/* Added negative margin to pull section up */}
 							<TextureBackground2 />

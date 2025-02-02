@@ -124,7 +124,7 @@ const Hero = () => {
 										opacity: { duration: 0.5 },
 									}}
 									className="h-[1.2em] relative">
-									<span className="animate-gradient-text text-3xl md:text-4xl inline-flex items-center">
+									<span className="animate-gradient-text text-2xl md:text-4xl inline-flex items-center">
 										{roles[currentRole]}
 										<motion.span
 											className="w-6 text-purple-400 opacity-80"

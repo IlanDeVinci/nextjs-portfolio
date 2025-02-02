@@ -51,16 +51,18 @@ const Taskbar = ({
 	<motion.div
 		initial={{ y: 100 }}
 		animate={{ y: 0 }}
-		className="fixed bottom-0 left-0 right-0 h-16 bg-purple-950/50 backdrop-blur-xl border-t border-purple-500/20 flex items-center px-4 gap-2 z-50">
-		{minimizedWindows.map((window) => (
-			<button
-				key={window.id}
-				onClick={() => onRestore(window.id)}
-				className="px-3 py-1 bg-purple-900/30 rounded text-sm text-purple-200/70 hover:bg-purple-800/30">
-				{window.title}
-			</button>
-		))}
-		<div className="ml-auto text-purple-200/30 text-xs">
+		className="fixed bottom-0 left-0 right-0 h-16 bg-purple-950/50 backdrop-blur-xl border-t border-purple-500/20 flex items-center px-4 gap-2 z-50 overflow-x-auto">
+		<div className="flex gap-2 items-center min-w-0 flex-shrink-0">
+			{minimizedWindows.map((window) => (
+				<button
+					key={window.id}
+					onClick={() => onRestore(window.id)}
+					className="px-3 py-1 bg-purple-900/30 rounded text-sm text-purple-200/70 hover:bg-purple-800/30 whitespace-nowrap">
+					{window.title}
+				</button>
+			))}
+		</div>
+		<div className="ml-auto text-purple-200/30 text-xs hidden sm:block">
 			Try clicking around...
 		</div>
 	</motion.div>
@@ -423,7 +425,7 @@ const TerminalWindow = ({
 							className="backdrop-blur-xl bg-purple-900/10 rounded-lg shadow-2xl border border-purple-500/20 overflow-hidden flex flex-col">
 							{/* Header */}
 							<div
-								className="flex items-center gap-2 p-3 bg-purple-950/50 border-b border-purple-500/20 sticky top-0 z-10"
+								className="flex items-center gap-2 p-3 bg-purple-950/50 border-b border-purple-500/20 sticky top-0 z-10 terminal-header"
 								onMouseDown={handleDragStart}
 								style={{ cursor: isFullScreen ? "default" : "move" }}>
 								<div className="flex gap-2 z-10">{children[0]}</div>
@@ -500,7 +502,7 @@ const TerminalWindow = ({
 					className="backdrop-blur-xl bg-purple-900/10 rounded-lg shadow-2xl border border-purple-500/20 overflow-hidden flex flex-col touch-manipulation">
 					{/* Header */}
 					<div
-						className="flex items-center gap-2 p-3 bg-purple-950/50 border-b border-purple-500/20 sticky top-0 z-10"
+						className="flex items-center gap-2 p-3 bg-purple-950/50 border-b border-purple-500/20 sticky top-0 z-10 terminal-header"
 						onMouseDown={handleDragStart}
 						style={{ cursor: isFullScreen ? "default" : "move" }}>
 						<div className="flex gap-2 z-10">{children[0]}</div>
@@ -1285,6 +1287,11 @@ const TerminalExperience = () => {
 		}, 1200);
 	}, [resetTerminal, startTyping]);
 
+	// Add this function to check if we're dragging the header
+	const isHeaderDrag = (target: HTMLElement) => {
+		return target.closest(".terminal-header") !== null;
+	};
+
 	// Add these touch handlers for mobile support
 	const handleTouchStart = useCallback(
 		(e: React.TouchEvent) => {
@@ -1292,6 +1299,13 @@ const TerminalExperience = () => {
 
 			const touch = e.touches[0];
 			const target = e.target as HTMLElement;
+
+			// Only allow dragging from the header on mobile
+			if (isMobileDevice() && !isHeaderDrag(target)) {
+				return;
+			}
+
+			e.preventDefault(); // Prevent page scroll
 
 			// Check if touching resize handles
 			const isLeftResize = target.classList.contains("resize-left");
@@ -1339,7 +1353,13 @@ const TerminalExperience = () => {
 	const handleTouchMove = useCallback(
 		(e: React.TouchEvent) => {
 			if (isFullScreen || !touchStateRef.current) return;
-			e.preventDefault();
+
+			const target = e.target as HTMLElement;
+			if (isMobileDevice() && !isHeaderDrag(target)) {
+				return;
+			}
+
+			e.preventDefault(); // Prevent page scroll
 
 			const touch = e.touches[0];
 
