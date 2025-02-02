@@ -345,6 +345,24 @@ const ProjectCard = ({ project, isActive }: ProjectProps) => {
 
 const Projects = () => {
 	const [activeIndex, setActiveIndex] = useState(0);
+	const [swiperInstance, setSwiperInstance] = useState<any>(null);
+
+	// Add initialization effect
+	useEffect(() => {
+		if (swiperInstance) {
+			// Perform 3 automatic slides with delays
+			const initializeSlider = async () => {
+				await new Promise((resolve) => setTimeout(resolve, 500));
+				swiperInstance.slideNext();
+				await new Promise((resolve) => setTimeout(resolve, 300));
+				swiperInstance.slidePrev();
+				await new Promise((resolve) => setTimeout(resolve, 300));
+				swiperInstance.slideNext();
+			};
+
+			initializeSlider();
+		}
+	}, [swiperInstance]);
 
 	return (
 		<section
@@ -434,6 +452,7 @@ const Projects = () => {
 						<div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-background to-transparent [animation:none]" />
 					</div>
 					<Swiper
+						onSwiper={setSwiperInstance}
 						modules={[Navigation, Pagination, Mousewheel, EffectCoverflow]}
 						spaceBetween={30}
 						slidesPerView={1.001}
