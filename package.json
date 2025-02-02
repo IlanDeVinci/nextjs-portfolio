@@ -20,6 +20,7 @@
 		"@types/nodemailer": "^6.4.17",
 		"@types/three": "^0.172.0",
 		"class-variance-authority": "^0.7.1",
+		"classnames": "^2.5.1",
 		"clsx": "^2.1.1",
 		"delaunator": "^5.0.1",
 		"dotenv": "^16.4.7",
