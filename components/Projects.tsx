@@ -419,12 +419,24 @@ const Projects = () => {
 								width: 50px !important; /* Increased from 40px */
 								height: 50px !important; /* Increased from 40px */
 								backdrop-filter: blur(4px);
+
+								@media (max-width: 768px) {
+									top: auto !important;
+									bottom: 0 !important;
+									transform: none !important;
+								}
 							}
 							.swiper-button-prev {
 								left: 100px;
+								@media (max-width: 768px) {
+									left: 30% !important;
+								}
 							}
 							.swiper-button-next {
 								right: 100px;
+								@media (max-width: 768px) {
+									right: 30% !important;
+								}
 							}
 							.swiper-button-prev:hover,
 							.swiper-button-next:hover {

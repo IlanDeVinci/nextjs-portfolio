@@ -829,6 +829,33 @@ function GlobeMesh({
 		setHovered(false);
 	};
 
+	// Add touch handlers
+	const handleTouchStart = (e: React.TouchEvent) => {
+		if (!dragStartRef.current && e.touches.length === 1) {
+			const touch = e.touches[0];
+			dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+			dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		if (dragStartRef.current && e.touches.length === 1) {
+			const touch = e.touches[0];
+			const deltaX = touch.clientX - dragState.current.lastPosition.x;
+			const deltaY = touch.clientY - dragState.current.lastPosition.y;
+
+			dragState.current.isDragging = true;
+			dragState.current.rotation.y += deltaX * 0.005;
+			dragState.current.rotation.x += deltaY * 0.005;
+			dragState.current.momentum = {
+				x: deltaY * 0.005 * 0.1,
+				y: deltaX * 0.005 * 0.1,
+			};
+
+			dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
+		}
+	};
+
 	return (
 		<animated.mesh
 			ref={meshRef}
@@ -836,6 +863,9 @@ function GlobeMesh({
 			scale={glowScale.to((s) => [0.75 * s, 0.75 * s, 0.75 * s])} // Changed from 0.8 to 0.75
 			rotation={[0, 0, 0]} // Changed from [0, Math.PI, 0] to [0, 0, 0]
 			onPointerDown={handlePointerDown}
+			onTouchStart={handleTouchStart}
+			onTouchMove={handleTouchMove}
+			onTouchEnd={handlePointerUp}
 			userData={{
 				isHovered: hovered,
 				isDragging,
@@ -1059,9 +1089,9 @@ export default function Globe() {
 	return (
 		<div
 			className="relative space-y-6"
-			style={{ padding: "40px" }}>
+			style={{ padding: "20px" }}>
 			{/* Existing globe container */}
-			<div className="relative h-[500px] w-full">
+			<div className="relative h-[300px] md:h-[500px] w-full">
 				{/* Updated glow effects */}
 				<div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-purple-400/10 to-purple-900/20 rounded-full blur-3xl" />
 				<div className="absolute inset-0 bg-purple-500/5 rounded-full blur-2xl" />
@@ -1069,7 +1099,7 @@ export default function Globe() {
 
 				<Canvas
 					camera={{
-						position: [0, 0, 3.2], // Changed from 2.8 to 3.2 for better view
+						position: [0, 0, window.innerWidth < 768 ? 4 : 3.2], // Changed from 2.8 to 3.2 for better view
 						fov: 40,
 						near: 1,
 						far: 1000,

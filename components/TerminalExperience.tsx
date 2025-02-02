@@ -78,6 +78,9 @@ interface TerminalWindowProps {
 	onActivate: () => void;
 	terminalContentRef: React.RefObject<HTMLDivElement>; // Add this prop
 	inputRef: React.RefObject<HTMLTextAreaElement>; // Add this line
+	onTouchStart: (e: React.TouchEvent) => void;
+	onTouchMove: (e: React.TouchEvent) => void;
+	onTouchEnd: () => void;
 }
 
 interface ResizeState {
@@ -89,6 +92,11 @@ interface ResizeState {
 }
 
 const TEXTAREA_BASE_HEIGHT = 24; // Base height in pixels
+
+// Add this utility function at the top level
+const isMobileDevice = () => {
+	return typeof window !== "undefined" && window.innerWidth < 768;
+};
 
 // Update the TerminalWindow component
 const TerminalWindow = ({
@@ -103,6 +111,9 @@ const TerminalWindow = ({
 	onActivate,
 	terminalContentRef, // Add this prop
 	inputRef, // Add this prop
+	onTouchStart,
+	onTouchMove,
+	onTouchEnd,
 }: TerminalWindowProps) => {
 	// Replace all drag related state with these two simple states
 	const [isDragging, setIsDragging] = useState(false);
@@ -298,8 +309,8 @@ const TerminalWindow = ({
 		onPositionChange,
 		size.height,
 		size.width,
-		position.y,
 		terminalContentRef,
+		position.y,
 	]);
 
 	// Window resize handler
@@ -430,19 +441,27 @@ const TerminalWindow = ({
 							{!isFullScreen && (
 								<>
 									<div
-										className="absolute left-0 top-0 w-1 h-full cursor-w-resize hover:bg-purple-500/20"
+										className={`absolute left-0 top-0 h-full cursor-w-resize hover:bg-purple-500/20 touch-manipulation resize-left ${
+											isMobileDevice() ? "w-8" : "w-1"
+										}`}
 										onMouseDown={(e) => handleMouseDown(e, "left")}
 									/>
 									<div
-										className="absolute right-0 top-0 w-1 h-full cursor-e-resize hover:bg-purple-500/20"
+										className={`absolute right-0 top-0 h-full cursor-e-resize hover:bg-purple-500/20 touch-manipulation resize-right ${
+											isMobileDevice() ? "w-8" : "w-1"
+										}`}
 										onMouseDown={(e) => handleMouseDown(e, "right")}
 									/>
 									<div
-										className="absolute bottom-0 left-0 w-full h-1 cursor-s-resize hover:bg-purple-500/20"
+										className={`absolute bottom-0 left-0 w-full cursor-s-resize hover:bg-purple-500/20 touch-manipulation resize-bottom ${
+											isMobileDevice() ? "h-8" : "h-1"
+										}`}
 										onMouseDown={(e) => handleMouseDown(e, "bottom")}
 									/>
 									<div
-										className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize hover:bg-purple-500/20"
+										className={`absolute bottom-0 right-0 cursor-se-resize hover:bg-purple-500/20 touch-manipulation resize-bottom-right ${
+											isMobileDevice() ? "w-8 h-8" : "w-3 h-3"
+										}`}
 										onMouseDown={(e) => handleMouseDown(e, "bottom-right")}
 									/>
 								</>
@@ -475,7 +494,10 @@ const TerminalWindow = ({
 					}}
 					onClick={handleTerminalClick}
 					onMouseDown={handleTerminalMouseDown} // Add mouse down handler
-					className="backdrop-blur-xl bg-purple-900/10 rounded-lg shadow-2xl border border-purple-500/20 overflow-hidden flex flex-col">
+					onTouchStart={onTouchStart}
+					onTouchMove={onTouchMove}
+					onTouchEnd={onTouchEnd}
+					className="backdrop-blur-xl bg-purple-900/10 rounded-lg shadow-2xl border border-purple-500/20 overflow-hidden flex flex-col touch-manipulation">
 					{/* Header */}
 					<div
 						className="flex items-center gap-2 p-3 bg-purple-950/50 border-b border-purple-500/20 sticky top-0 z-10"
@@ -494,19 +516,27 @@ const TerminalWindow = ({
 					{!isFullScreen && (
 						<>
 							<div
-								className="absolute left-0 top-0 w-1 h-full cursor-w-resize hover:bg-purple-500/20"
+								className={`absolute left-0 top-0 h-full cursor-w-resize hover:bg-purple-500/20 touch-manipulation resize-left ${
+									isMobileDevice() ? "w-8" : "w-1"
+								}`}
 								onMouseDown={(e) => handleMouseDown(e, "left")}
 							/>
 							<div
-								className="absolute right-0 top-0 w-1 h-full cursor-e-resize hover:bg-purple-500/20"
+								className={`absolute right-0 top-0 h-full cursor-e-resize hover:bg-purple-500/20 touch-manipulation resize-right ${
+									isMobileDevice() ? "w-8" : "w-1"
+								}`}
 								onMouseDown={(e) => handleMouseDown(e, "right")}
 							/>
 							<div
-								className="absolute bottom-0 left-0 w-full h-1 cursor-s-resize hover:bg-purple-500/20"
+								className={`absolute bottom-0 left-0 w-full cursor-s-resize hover:bg-purple-500/20 touch-manipulation resize-bottom ${
+									isMobileDevice() ? "h-8" : "h-1"
+								}`}
 								onMouseDown={(e) => handleMouseDown(e, "bottom")}
 							/>
 							<div
-								className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize hover:bg-purple-500/20"
+								className={`absolute bottom-0 right-0 cursor-se-resize hover:bg-purple-500/20 touch-manipulation resize-bottom-right ${
+									isMobileDevice() ? "w-8 h-8" : "w-3 h-3"
+								}`}
 								onMouseDown={(e) => handleMouseDown(e, "bottom-right")}
 							/>
 						</>
@@ -580,32 +610,20 @@ const useResizeTextarea = (
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", handleWindowResize);
 		};
-	}, [resize, containerRef, textareaRef]);
+	}, [resize, textareaRef, containerRef]);
 
 	return resize;
 };
 
-// Add these type definitions at the top of the file
-type ActionType = () => void;
-
+// Add this interface and commands object before the TerminalExperience component
 interface CommandResponse {
 	output: string;
-	action?: ActionType;
+	action?: () => void;
 }
 
-type CommandFunction = (args: string[]) => CommandResponse;
-
-type CommandRegistry = {
-	[key: string]: CommandFunction;
-};
-
-interface WindowData {
-	id: string;
-	title: string;
-}
-
-// Add this interface and commands object before the TerminalExperience component
-const AVAILABLE_COMMANDS: CommandRegistry = {
+const AVAILABLE_COMMANDS: {
+	[key: string]: (args: string[]) => CommandResponse;
+} = {
 	help: () => ({
 		output: `
 Available commands:
@@ -735,6 +753,16 @@ Type 'github' to see more projects!
 	}),
 };
 
+// Add this interface near the top with other interfaces
+interface TouchState {
+	startX: number;
+	startY: number;
+	initialWidth: number;
+	initialHeight: number;
+	isResizing: boolean;
+	resizeType: "left" | "right" | "bottom" | "bottom-right" | null;
+}
+
 const TerminalExperience = () => {
 	// Add new state for input prompt visibility
 	const [showPrompt, setShowPrompt] = useState(false);
@@ -743,10 +771,10 @@ const TerminalExperience = () => {
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const [isVisible, setIsVisible] = useState(true);
 	const [, setHasStartedTyping] = useState(false);
-	const [minimizedWindows, setMinimizedWindows] = useState<WindowData[]>([]);
+	const [minimizedWindows, setMinimizedWindows] = useState<
+		{ id: string; title: string }[]
+	>([]);
 	const terminalRef = useRef<HTMLDivElement>(null);
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [size, setSize] = useState({ width: 800, height: 400 });
 	const [isActive, setIsActive] = useState(false);
 	const [userInput, setUserInput] = useState("");
 	const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
@@ -850,19 +878,11 @@ const TerminalExperience = () => {
 			cancelAnimationFrame(animationFrameId);
 			isTypingRef.current = false;
 		};
-	}, [
-		experience,
-		setText,
-		setCommandHistory,
-		setIsTypingComplete,
-		setHasFinishedTyping,
-		setShowPrompt,
-		terminalContentRef,
-	]);
+	}, [experience]);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
-			(entries: IntersectionObserverEntry[]) => {
+			(entries) => {
 				if (entries[0].isIntersecting && initialLoadRef.current) {
 					initialLoadRef.current = false;
 					setHasStartedTyping(true);
@@ -878,13 +898,6 @@ const TerminalExperience = () => {
 
 		return () => observer.disconnect();
 	}, [startTyping]);
-
-	useEffect(() => {
-		if (terminalRef.current) {
-			const centerX = (window.innerWidth - size.width) / 2;
-			setPosition((prev) => ({ ...prev, x: centerX }));
-		}
-	}, [size.width]);
 
 	// Move resize function to component level
 	const resizeTextarea = useResizeTextarea(inputRef, terminalContentRef);
@@ -945,7 +958,7 @@ const TerminalExperience = () => {
 			const output = handleCommand(input);
 			const escapedInput = input.replace(
 				/[<>&"']/g,
-				(char: string): string =>
+				(char) =>
 					({
 						"<": "&lt;",
 						">": "&gt;",
@@ -975,7 +988,7 @@ const TerminalExperience = () => {
 		}
 	};
 
-	const resetTerminal = () => {
+	const resetTerminal = useCallback(() => {
 		setText("");
 		setCommandHistory("");
 		setHasStartedTyping(false);
@@ -984,7 +997,7 @@ const TerminalExperience = () => {
 		setUserInput("");
 		setIsActive(false);
 		setShowPrompt(false); // Hide prompt on reset
-	};
+	}, []);
 
 	const { lock: lockScroll, unlock: unlockScroll } = useScrollLock();
 
@@ -1027,7 +1040,7 @@ const TerminalExperience = () => {
 		}
 	};
 
-	const handleRestore = (id: string): void => {
+	const handleRestore = (id: string) => {
 		if (id === "terminal") {
 			setIsMinimized(false);
 			setMinimizedWindows((windows) =>
@@ -1178,99 +1191,217 @@ const TerminalExperience = () => {
 		);
 	};
 
-	const handleOpenTerminal = () => {
-		// Reset everything first and ensure prompt is hidden
+	// Update initial size state to be responsive
+	const [size, setSize] = useState(() => {
+		const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+		return {
+			width: isMobile ? Math.min(320, window.innerWidth - 32) : 800,
+			height: isMobile ? 400 : 500,
+		};
+	});
+
+	// Add initial position state to center the terminal
+	const [position, setPosition] = useState(() => {
+		const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+		const width = isMobile ? Math.min(320, window.innerWidth - 32) : 800;
+		const height = isMobile ? 400 : 500;
+
+		return {
+			x: typeof window !== "undefined" ? (window.innerWidth - width) / 2 : 0,
+			y:
+				typeof window !== "undefined"
+					? Math.max(20, (window.innerHeight - height) / 2 - 100)
+					: 0,
+		};
+	});
+
+	// Add touch state ref
+	const touchStateRef = useRef<TouchState>({
+		startX: 0,
+		startY: 0,
+		initialWidth: 0,
+		initialHeight: 0,
+		isResizing: false,
+		resizeType: null,
+	});
+
+	// Add window resize handler
+	useEffect(() => {
+		const handleResize = () => {
+			const isMobile = window.innerWidth < 768;
+			const newWidth = isMobile
+				? Math.min(320, window.innerWidth - 32)
+				: size.width;
+			const newHeight = isMobile ? 400 : size.height;
+
+			// Update size for mobile
+			setSize(() => ({
+				width: Math.min(newWidth, window.innerWidth - 32),
+				height: newHeight,
+			}));
+
+			// Keep terminal centered and within bounds
+			setPosition((prev) => ({
+				x: Math.min(Math.max(0, prev.x), window.innerWidth - newWidth),
+				y: Math.min(Math.max(20, prev.y), window.innerHeight - newHeight),
+			}));
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, [size.width, size.height]);
+
+	// Update the handleOpenTerminal function
+	const handleOpenTerminal = useCallback(() => {
+		// Reset terminal state
 		resetTerminal();
 		setShowPrompt(false);
 		isTypingRef.current = false;
 
-		// Show terminal and center it
-		setIsVisible(true);
-		const centerX = (window.innerWidth - size.width) / 2;
-		const centerY = (window.innerHeight - size.height) / 2;
-		setPosition({ x: centerX, y: Math.max(20, centerY - 100) });
+		// Calculate new size based on screen size
+		const isMobile = window.innerWidth < 768;
+		const newWidth = isMobile ? Math.min(320, window.innerWidth - 32) : 800;
+		const newHeight = isMobile ? 400 : 500;
 
-		// Add longer delay before starting typing
+		// Set size
+		setSize({
+			width: newWidth,
+			height: newHeight,
+		});
+
+		// Center the terminal
+		setPosition({
+			x: (window.innerWidth - newWidth) / 2,
+			y: Math.max(20, (window.innerHeight - newHeight) / 2 - 100),
+		});
+
+		// Show terminal and start typing
+		setIsVisible(true);
 		setTimeout(() => {
 			if (!isTypingRef.current) {
 				setHasStartedTyping(true);
 				startTyping();
 			}
 		}, 1200);
-	};
+	}, [resetTerminal, startTyping]);
 
-	useEffect(() => {
-		if (commandHistory && !isMinimized && terminalContentRef.current) {
-			ScrollUtility.scrollToBottom(terminalContentRef.current);
-		}
-	}, [commandHistory, isMinimized]);
+	// Add these touch handlers for mobile support
+	const handleTouchStart = useCallback(
+		(e: React.TouchEvent) => {
+			if (isFullScreen) return;
 
-	// Add textarea focus management
-	useEffect(() => {
-		const textarea = inputRef.current;
-		if (!textarea) return;
+			const touch = e.touches[0];
+			const target = e.target as HTMLElement;
 
-		const handleFocus = () => {
-			requestAnimationFrame(() => {
-				const length = textarea.value.length;
-				textarea.setSelectionRange(Math.max(18, length), Math.max(18, length));
-			});
-		};
+			// Check if touching resize handles
+			const isLeftResize = target.classList.contains("resize-left");
+			const isRightResize = target.classList.contains("resize-right");
+			const isBottomResize = target.classList.contains("resize-bottom");
+			const isBottomRightResize = target.classList.contains(
+				"resize-bottom-right"
+			);
 
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const pos = textarea.selectionStart;
-			const end = textarea.selectionEnd;
-
-			// Special handling for left and up arrow keys only
-			if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-				if (pos <= 18) {
-					e.preventDefault();
-					requestAnimationFrame(() => {
-						textarea.setSelectionRange(18, 18);
-					});
-				}
-				return;
+			if (
+				isLeftResize ||
+				isRightResize ||
+				isBottomResize ||
+				isBottomRightResize
+			) {
+				touchStateRef.current = {
+					startX: touch.clientX,
+					startY: touch.clientY,
+					initialWidth: size.width,
+					initialHeight: size.height,
+					isResizing: true,
+					resizeType: isLeftResize
+						? "left"
+						: isRightResize
+						? "right"
+						: isBottomResize
+						? "bottom"
+						: "bottom-right",
+				};
+			} else {
+				// Handle dragging
+				touchStateRef.current = {
+					startX: touch.clientX - position.x,
+					startY: touch.clientY - position.y,
+					initialWidth: size.width,
+					initialHeight: size.height,
+					isResizing: false,
+					resizeType: null,
+				};
 			}
+		},
+		[isFullScreen, size, position]
+	);
 
-			// Other keys maintain original behavior
-			if (pos < 17 && !e.shiftKey) {
-				e.preventDefault();
-				requestAnimationFrame(() => {
-					textarea.setSelectionRange(17, 17);
+	const handleTouchMove = useCallback(
+		(e: React.TouchEvent) => {
+			if (isFullScreen || !touchStateRef.current) return;
+			e.preventDefault();
+
+			const touch = e.touches[0];
+
+			if (touchStateRef.current.isResizing) {
+				// Handle resizing
+				const deltaX = touch.clientX - touchStateRef.current.startX;
+				const deltaY = touch.clientY - touchStateRef.current.startY;
+
+				switch (touchStateRef.current.resizeType) {
+					case "left":
+						const newWidth = Math.max(
+							320,
+							touchStateRef.current.initialWidth - deltaX
+						);
+						setSize((prev) => ({
+							width: newWidth,
+							height: prev.height,
+						}));
+						setPosition((prev) => ({
+							x: touchStateRef.current.startX + deltaX,
+							y: prev.y,
+						}));
+						break;
+					case "right":
+						setSize((prev) => ({
+							width: Math.max(
+								320,
+								Math.min(
+									touchStateRef.current.initialWidth + deltaX,
+									window.innerWidth - position.x - 16
+								)
+							),
+							height: prev.height,
+						}));
+						break;
+					case "bottom":
+						setSize((prev) => ({
+							width: prev.width,
+							height: Math.max(
+								200,
+								Math.min(
+									touchStateRef.current.initialHeight + deltaY,
+									window.innerHeight - position.y - 16
+								)
+							),
+						}));
+						break;
+					// Add other resize cases as needed
+				}
+			} else {
+				// Handle dragging
+				const newX = touch.clientX - touchStateRef.current.startX;
+				const newY = touch.clientY - touchStateRef.current.startY;
+
+				setPosition({
+					x: Math.max(0, Math.min(newX, window.innerWidth - size.width)),
+					y: Math.max(0, Math.min(newY, window.innerHeight - size.height)),
 				});
 			}
-
-			// Handle shift selection specifically for arrow keys
-			if (e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowUp")) {
-				if (end < 18) {
-					e.preventDefault();
-					requestAnimationFrame(() => {
-						textarea.setSelectionRange(18, end);
-					});
-				}
-			}
-		};
-
-		const handleSelect = () => {
-			const start = textarea.selectionStart;
-			const end = textarea.selectionEnd;
-
-			// Allow selection from position 17 unless it's from arrow keys
-			if (start < 17) {
-				textarea.setSelectionRange(17, end);
-			}
-		};
-
-		textarea.addEventListener("focus", handleFocus);
-		textarea.addEventListener("keydown", handleKeyDown);
-		textarea.addEventListener("select", handleSelect);
-
-		return () => {
-			textarea.removeEventListener("focus", handleFocus);
-			textarea.removeEventListener("keydown", handleKeyDown);
-			textarea.removeEventListener("select", handleSelect);
-		};
-	}, []);
+		},
+		[isFullScreen, setSize, setPosition, size, position]
+	);
 
 	// Update the handleFullScreen function in TerminalExperience
 	const handleFullScreen = useCallback(() => {
@@ -1310,7 +1441,18 @@ const TerminalExperience = () => {
 						onActivate={() => setIsActive(true)}
 						terminalContentRef={terminalContentRef} // Pass the ref
 						inputRef={inputRef} // Add this prop
-					>
+						onTouchStart={handleTouchStart}
+						onTouchMove={handleTouchMove}
+						onTouchEnd={() => {
+							touchStateRef.current = {
+								startX: 0,
+								startY: 0,
+								initialWidth: 0,
+								initialHeight: 0,
+								isResizing: false,
+								resizeType: null,
+							};
+						}}>
 						{/* Window controls */}
 						<motion.div
 							className="flex gap-2"
