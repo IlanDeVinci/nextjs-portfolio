@@ -39,6 +39,7 @@ const ContactForm = () => {
 			}
 		} catch (error) {
 			setFormStatus("error");
+			console.error("Failed to send message:", error);
 		} finally {
 			setIsLoading(false);
 			setTimeout(() => setFormStatus("idle"), 3000);

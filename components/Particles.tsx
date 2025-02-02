@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import { connect } from "http2";
 
 const ParticlesComponent = () => {
 	const [init, setInit] = useState(false);

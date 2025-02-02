@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 
@@ -22,8 +22,6 @@ const ScrollUtility = {
 
 // Replace the useScrollLock hook with this new implementation
 const useScrollLock = () => {
-	const scrollPos = useRef(0);
-
 	const lock = useCallback(() => {
 		// Don't modify scroll position, just prevent scrolling
 		document.body.style.overflow = "hidden";
@@ -92,16 +90,6 @@ interface ResizeState {
 
 const TEXTAREA_BASE_HEIGHT = 24; // Base height in pixels
 
-// Add new interface for drag state
-interface DragState {
-	isDragging: boolean;
-	startX: number;
-	startY: number;
-	initialPosX: number;
-	initialPosY: number;
-	scrollY: number;
-}
-
 // Update the TerminalWindow component
 const TerminalWindow = ({
 	children,
@@ -121,7 +109,6 @@ const TerminalWindow = ({
 	const dragOffset = useRef({ x: 0, y: 0 });
 	const { lock: lockScroll, unlock: unlockScroll } = useScrollLock();
 
-	const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 	const [resizeState, setResizeState] = useState<ResizeState>({
 		isResizing: false,
 		wasAtBottom: false,
@@ -305,7 +292,15 @@ const TerminalWindow = ({
 				cancelAnimationFrame(animationFrameRef.current);
 			}
 		};
-	}, [resizeState, onSizeChange, onPositionChange, size.height, position.y]);
+	}, [
+		resizeState,
+		onSizeChange,
+		onPositionChange,
+		size.height,
+		size.width,
+		position.y,
+		terminalContentRef,
+	]);
 
 	// Window resize handler
 	useEffect(() => {
@@ -324,7 +319,7 @@ const TerminalWindow = ({
 
 		window.addEventListener("resize", handleWindowResize);
 		return () => window.removeEventListener("resize", handleWindowResize);
-	}, []);
+	}, [terminalContentRef]);
 
 	// Add state to track mouse down time and position
 	const mouseDownRef = useRef({ time: 0, x: 0, y: 0 });
@@ -585,20 +580,32 @@ const useResizeTextarea = (
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", handleWindowResize);
 		};
-	}, [resize]);
+	}, [resize, containerRef, textareaRef]);
 
 	return resize;
 };
 
-// Add this interface and commands object before the TerminalExperience component
+// Add these type definitions at the top of the file
+type ActionType = () => void;
+
 interface CommandResponse {
 	output: string;
-	action?: () => void;
+	action?: ActionType;
 }
 
-const AVAILABLE_COMMANDS: {
-	[key: string]: (args: string[]) => CommandResponse;
-} = {
+type CommandFunction = (args: string[]) => CommandResponse;
+
+type CommandRegistry = {
+	[key: string]: CommandFunction;
+};
+
+interface WindowData {
+	id: string;
+	title: string;
+}
+
+// Add this interface and commands object before the TerminalExperience component
+const AVAILABLE_COMMANDS: CommandRegistry = {
 	help: () => ({
 		output: `
 Available commands:
@@ -735,10 +742,8 @@ const TerminalExperience = () => {
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const [isVisible, setIsVisible] = useState(true);
-	const [hasStartedTyping, setHasStartedTyping] = useState(false);
-	const [minimizedWindows, setMinimizedWindows] = useState<
-		{ id: string; title: string }[]
-	>([]);
+	const [, setHasStartedTyping] = useState(false);
+	const [minimizedWindows, setMinimizedWindows] = useState<WindowData[]>([]);
 	const terminalRef = useRef<HTMLDivElement>(null);
 	const [position, setPosition] = useState({ x: 0, y: 0 });
 	const [size, setSize] = useState({ width: 800, height: 400 });
@@ -761,52 +766,26 @@ const TerminalExperience = () => {
 	const { isAtBottom, updateScrollState } =
 		useScrollPosition(terminalContentRef);
 
-	const experience = [
-		"> Loading professional experience...",
-		"> Portfolio Website (2025)",
-		"  • Built using Next.js, TypeScript, and Tailwind CSS",
-		"  • Implemented interactive terminal interface",
-		"  • Responsive design for all devices",
-		"> Symfony E-Commerce Website (2024)",
-		"  • Created with Symfony and MySQL",
-		"  • Features user authentication and real-time updates",
-		"> Harry Potter Trading Card Website (2024)",
-		"  • Built a platform for trading virtual Harry Potter cards",
-		"  • Used Next.js, TypeScript and real-time Firebase database",
-		"  • Implemented user authentication and card trading system",
-		"> Currently perfecting my fullstack development skills...",
-	];
+	const experience = useMemo(
+		() => [
+			"> Loading professional experience...",
+			"> Portfolio Website (2025)",
+			"  • Built using Next.js, TypeScript, and Tailwind CSS",
+			"  • Implemented interactive terminal interface",
+			"  • Responsive design for all devices",
+			"> Symfony E-Commerce Website (2024)",
+			"  • Created with Symfony and MySQL",
+			"  • Features user authentication and real-time updates",
+			"> Harry Potter Trading Card Website (2024)",
+			"  • Built a platform for trading virtual Harry Potter cards",
+			"  • Used Next.js, TypeScript and real-time Firebase database",
+			"  • Implemented user authentication and card trading system",
+			"> Currently perfecting my fullstack development skills...",
+		],
+		[]
+	);
 
-	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting && initialLoadRef.current) {
-					initialLoadRef.current = false;
-					setHasStartedTyping(true);
-					startTyping();
-				}
-			},
-			{ threshold: 0.3 }
-		);
-
-		if (terminalRef.current) {
-			observer.observe(terminalRef.current);
-		}
-
-		return () => observer.disconnect();
-	}, []);
-
-	useEffect(() => {
-		if (terminalRef.current) {
-			const centerX = (window.innerWidth - size.width) / 2;
-			setPosition((prev) => ({ ...prev, x: centerX }));
-		}
-	}, []);
-
-	// Move resize function to component level
-	const resizeTextarea = useResizeTextarea(inputRef, terminalContentRef);
-
-	const startTyping = () => {
+	const startTyping = useCallback(() => {
 		if (isTypingRef.current) return;
 
 		// Clear everything first
@@ -871,7 +850,44 @@ const TerminalExperience = () => {
 			cancelAnimationFrame(animationFrameId);
 			isTypingRef.current = false;
 		};
-	};
+	}, [
+		experience,
+		setText,
+		setCommandHistory,
+		setIsTypingComplete,
+		setHasFinishedTyping,
+		setShowPrompt,
+		terminalContentRef,
+	]);
+
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries: IntersectionObserverEntry[]) => {
+				if (entries[0].isIntersecting && initialLoadRef.current) {
+					initialLoadRef.current = false;
+					setHasStartedTyping(true);
+					startTyping();
+				}
+			},
+			{ threshold: 0.3 }
+		);
+
+		if (terminalRef.current) {
+			observer.observe(terminalRef.current);
+		}
+
+		return () => observer.disconnect();
+	}, [startTyping]);
+
+	useEffect(() => {
+		if (terminalRef.current) {
+			const centerX = (window.innerWidth - size.width) / 2;
+			setPosition((prev) => ({ ...prev, x: centerX }));
+		}
+	}, [size.width]);
+
+	// Move resize function to component level
+	const resizeTextarea = useResizeTextarea(inputRef, terminalContentRef);
 
 	const renderPrompt = () => (
 		<span className="flex text-purple-400 whitespace-nowrap ">
@@ -929,7 +945,7 @@ const TerminalExperience = () => {
 			const output = handleCommand(input);
 			const escapedInput = input.replace(
 				/[<>&"']/g,
-				(char) =>
+				(char: string): string =>
 					({
 						"<": "&lt;",
 						">": "&gt;",
@@ -987,8 +1003,6 @@ const TerminalExperience = () => {
 
 	// Update handleMinimize to remove fullscreen-related body modifications
 	const handleMinimize = useCallback(() => {
-		const currentScroll = window.scrollY;
-
 		if (isFullScreen) {
 			unlockScroll();
 			setIsFullScreen(false);
@@ -1013,7 +1027,7 @@ const TerminalExperience = () => {
 		}
 	};
 
-	const handleRestore = (id: string) => {
+	const handleRestore = (id: string): void => {
 		if (id === "terminal") {
 			setIsMinimized(false);
 			setMinimizedWindows((windows) =>

@@ -10,7 +10,7 @@ const navItems = ["Skills", "Studies", "Projects", "Experience", "Contact"];
 const Navbar = () => {
 	const [activeItem, setActiveItem] = useState("");
 	const [isScrolled, setIsScrolled] = useState(false);
-	const [scrollProgress, setScrollProgress] = useState(0);
+	const [, setScrollProgress] = useState(0);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	useEffect(() => {

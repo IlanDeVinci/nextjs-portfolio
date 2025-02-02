@@ -11,7 +11,6 @@ import {
 	Pagination,
 	Autoplay,
 	Mousewheel,
-	FreeMode,
 	EffectCoverflow,
 } from "swiper/modules";
 import type { SwiperSlideProps, SwiperProps } from "swiper/react";
@@ -24,17 +23,15 @@ import "swiper/css/effect-coverflow";
 import { useState, useEffect } from "react";
 
 declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			Swiper: React.DetailedHTMLProps<
-				React.HTMLAttributes<HTMLElement> & SwiperProps,
-				HTMLElement
-			>;
-			SwiperSlide: React.DetailedHTMLProps<
-				React.HTMLAttributes<HTMLElement> & SwiperSlideProps,
-				HTMLElement
-			>;
-		}
+	interface IntrinsicElements {
+		Swiper: React.DetailedHTMLProps<
+			React.HTMLAttributes<HTMLElement> & SwiperProps,
+			HTMLElement
+		>;
+		SwiperSlide: React.DetailedHTMLProps<
+			React.HTMLAttributes<HTMLElement> & SwiperSlideProps,
+			HTMLElement
+		>;
 	}
 }
 const projects = [
@@ -430,7 +427,13 @@ const Projects = () => {
 						<div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-background to-transparent [animation:none]" />
 					</div>
 					<Swiper
-						modules={[Navigation, Pagination, Mousewheel, EffectCoverflow]}
+						modules={[
+							Navigation,
+							Pagination,
+							Mousewheel,
+							EffectCoverflow,
+							Autoplay,
+						]}
 						spaceBetween={30}
 						slidesPerView={1.001}
 						centeredSlides={true}

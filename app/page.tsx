@@ -18,7 +18,8 @@ import ParticleBackground from "@/components/ParticleBackground";
 
 export default function Page() {
 	const [isLoading, setIsLoading] = useState(true);
-	const [activeSection, setActiveSection] = useState("hero");
+	// Remove unused state since setActiveSection is the only one being used
+	const [, setActiveSection] = useState("hero");
 
 	// Handle loading state
 	useEffect(() => {
@@ -52,14 +53,6 @@ export default function Page() {
 
 		handleScroll();
 	}, []);
-
-	// Smooth scroll handler
-	const scrollToSection = (sectionId: string) => {
-		const element = document.getElementById(sectionId);
-		if (element) {
-			element.scrollIntoView({ behavior: "smooth" });
-		}
-	};
 
 	return (
 		<AnimatePresence mode="wait">

@@ -18,7 +18,7 @@ const ParticleBackground = () => {
 		};
 		updateCanvasSize();
 
-		let particles: Particle[] = [];
+		const particles: Particle[] = [];
 		const particleCount = 30; // Reduced from 100 to 30
 
 		class Particle {

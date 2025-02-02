@@ -6,7 +6,6 @@ import { FaReact, FaNodeJs, FaGithub, FaFigma } from "react-icons/fa";
 import {
 	SiNextdotjs,
 	SiTypescript,
-	SiGraphql,
 	SiTailwindcss,
 	SiPostgresql,
 	SiMysql,
@@ -121,6 +120,21 @@ const skillsByCategory: SkillCategories = {
 			name: "Symfony",
 			icon: SiSymfony,
 			description: "PHP framework for robust web applications",
+		},
+		{
+			name: "Java",
+			icon: DiJava,
+			description: "Java development for enterprise applications",
+		},
+		{
+			name: "PostgreSQL",
+			icon: SiPostgresql,
+			description: "Relational database management with PostgreSQL",
+		},
+		{
+			name: "MySQL",
+			icon: SiMysql,
+			description: "Database design and management with MySQL",
 		},
 	],
 	Tools: [

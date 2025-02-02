@@ -56,7 +56,7 @@ function LocationMarker({ position }: { position: [number, number, number] }) {
 		// Removed unused variable 'direction'
 
 		// Create a rotation that aligns with the surface normal and points inward
-		let quaternion = new THREE.Quaternion();
+		const quaternion = new THREE.Quaternion();
 		const matrix = new THREE.Matrix4();
 
 		// Point from center toward position (0,0,0)
@@ -94,77 +94,64 @@ function LocationMarker({ position }: { position: [number, number, number] }) {
 	);
 }
 
-// Add this helper function outside of components
-function triangulateContinent(points: number[][], centroid: [number, number]) {
-	const typedPoints = points as [number, number][];
-	const allPoints = [...typedPoints];
-	const edges: number[][] = [];
-
-	// Add edge connections
-	for (let i = 0; i < points.length; i++) {
-		edges.push([i, (i + 1) % points.length]);
-	}
-
-	// Add centroid connections
-	const centroidIndex = allPoints.length;
-	allPoints.push(centroid);
-
-	return {
-		points: allPoints,
-		triangles: edges.flatMap((edge, i) => [edge[0], edge[1], centroidIndex]),
-	};
-}
-
 // Add these helper functions at the top of the file
 
 // Replace the CSV processing functions with GeoJSON processing
 // Replace the processGeoJSONData function with this improved version
-function processGeoJSONData(data: any): Array<[number, number][]> {
-	const processCoordinates = (coords: number[][]) => {
+interface GeoJSONFeature {
+	type: string;
+	geometry: {
+		type: string;
+		coordinates: number[][][] | number[][][][];
+	};
+}
+
+interface GeoJSONData {
+	features: GeoJSONFeature[];
+}
+
+// Update the processGeoJSONData function signature
+function processGeoJSONData(data: GeoJSONData): Array<[number, number][]> {
+	const processCoordinates = (coords: number[][]): [number, number][] => {
 		return coords.map((coord) => [coord[1], coord[0]] as [number, number]);
 	};
 
-	let features = data.features.flatMap((feature: any) => {
+	let features = data.features.flatMap((feature: GeoJSONFeature) => {
 		if (feature.geometry.type === "Polygon") {
 			// For Polygon, get the outer ring (first array of coordinates)
-			return [processCoordinates(feature.geometry.coordinates[0])];
+			return [
+				processCoordinates(feature.geometry.coordinates[0] as number[][]),
+			];
 		} else if (feature.geometry.type === "MultiPolygon") {
 			// For MultiPolygon, get the outer ring of each polygon
-			return feature.geometry.coordinates.map((poly: number[][][]) =>
+			return (feature.geometry.coordinates as number[][][][]).map((poly) =>
 				processCoordinates(poly[0])
 			);
 		}
 		return [];
 	});
 
-	// Filter out small polygons (less than 3 points) and ensure polygons are closed
-	interface Point extends Array<number> {
-		0: number;
-		1: number;
-	}
-
 	features = features
 		// Further remove small polygons (less than 20 points)
-		.filter((points: Point[]) => points.length >= 20)
-		.map((points: Point[]): Point[] => {
+		.filter((points) => points.length >= 20)
+		.map((points): [number, number][] => {
 			// Close the polygon if not already closed
 			if (
 				points[0][0] !== points[points.length - 1][0] ||
 				points[0][1] !== points[points.length - 1][1]
 			) {
-				points.push([points[0][0], points[0][1]] as Point);
+				points.push([points[0][0], points[0][1]] as [number, number]);
 			}
-			return points;
+			return points as [number, number][];
 		});
 
 	// Reduce total number of points
-	return reducePoints(features, 50);
+	return reducePoints(features);
 }
 
 // Add this new function after processGeoJSONData
 function reducePoints(
-	features: Array<[number, number][]>,
-	targetCount: number
+	features: Array<[number, number][]>
 ): Array<[number, number][]> {
 	const mergePointsInRadius = (
 		points: [number, number][]
@@ -228,23 +215,15 @@ function reducePoints(
 	return features.map((points) => mergePointsInRadius(points));
 }
 
-// Add these new interfaces near the top with other interfaces
-interface ContinentMesh extends THREE.Mesh {
-	userData: {
-		isHovered?: boolean;
-	};
-}
-
 function GlobeMesh({
 	position,
-	scale = 1,
 	onLocationUpdate,
 	onCoordinateUpdate,
 }: GlobeMeshProps) {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const [focusedLocation, setFocusedLocation] = useState<Location | null>(null);
 	const [isAnimating, setIsAnimating] = useState(false);
-	const [currentCoordinates, setCurrentCoordinates] = useState({
+	const [, setCurrentCoordinates] = useState({
 		lat: 0,
 		long: 0,
 	});
@@ -278,7 +257,11 @@ function GlobeMesh({
 		scale: glowScale,
 		color,
 		emissiveIntensity,
-	} = useSpring({
+	} = useSpring<{
+		scale: number;
+		color: string;
+		emissiveIntensity: number;
+	}>({
 		scale: hovered ? 1.02 : 1,
 		color: hovered ? "#B366F8" : "#A855F7",
 		emissiveIntensity: hovered ? 0.6 : 0.4,
@@ -321,13 +304,13 @@ function GlobeMesh({
 		}>
 	>([]);
 
-	const [allPoints, setAllPoints] = useState<Array<[number, number]>>([]);
+	const [, setAllPoints] = useState<Array<[number, number]>>([]);
 
 	useEffect(() => {
 		async function loadContinentData() {
 			try {
 				const response = await fetch("/ne_110m_land.json");
-				const data = await response.json();
+				const data: GeoJSONData = await response.json();
 				const processedContinents = processGeoJSONData(data); // Changed from processCSVData
 
 				const paths = processedContinents.map((points) => ({
@@ -337,8 +320,11 @@ function GlobeMesh({
 
 				setContinentPaths(paths);
 				setAllPoints(processedContinents.flatMap((continent) => continent));
-			} catch (error) {
-				console.error("Failed to load GeoJSON data:", error);
+			} catch (error: unknown) {
+				console.error(
+					"Failed to load GeoJSON data:",
+					error instanceof Error ? error.message : error
+				);
 				setContinentPaths([]);
 				setAllPoints([]);
 			}
@@ -469,9 +455,32 @@ function GlobeMesh({
 		window.addEventListener("pointerup", handlePointerUp);
 		return () => window.removeEventListener("pointerup", handlePointerUp);
 	}, []);
-
+	// Add helper to check for momentum
+	const hasMomentum = useCallback(() => {
+		return (
+			Math.abs(dragState.current.momentum.x) > 0.001 ||
+			Math.abs(dragState.current.momentum.y) > 0.001
+		);
+	}, []);
 	// Add this state to track if we're in the transition period after clearing location
 	const [isTransitioning, setIsTransitioning] = useState(false);
+	// Add this function to handle idle detection
+	const resetIdleTimer = useCallback(() => {
+		if (idleTimerRef.current) {
+			clearTimeout(idleTimerRef.current);
+		}
+
+		// Don't reset idle state if we're in the transition period
+		if (!isTransitioning) {
+			setIsIdle(false);
+			idleTimerRef.current = setTimeout(() => {
+				// Only start auto-rotation if not dragging, not animating, and no momentum
+				if (!dragState.current.isDragging && !isAnimating && !hasMomentum()) {
+					setIsIdle(true);
+				}
+			}, 3000);
+		}
+	}, [isTransitioning, isAnimating, hasMomentum]);
 
 	// Update the handleClearLocation handler in the event listener useEffect
 	useEffect(() => {
@@ -528,7 +537,7 @@ function GlobeMesh({
 				handleClearLocation as EventListener
 			);
 		};
-	}, [onLocationUpdate]);
+	}, [onLocationUpdate, resetIdleTimer]);
 
 	// Fix the rotationToCoordinates function
 	const rotationToCoordinates = (rotationX: number, rotationY: number) => {
@@ -597,38 +606,12 @@ function GlobeMesh({
 	};
 
 	// Add new state for continent hover
-	const [hoveredContinent, setHoveredContinent] = useState<number | null>(null);
+	const [hoveredContinent] = useState<number | null>(null);
 
 	// Add these new states/refs for idle detection and auto-rotation
 	const [isIdle, setIsIdle] = useState(true);
 	const idleTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 	const autoRotationSpeed = 0.1; // Degrees per frame
-
-	// Add helper to check for momentum
-	const hasMomentum = () => {
-		return (
-			Math.abs(dragState.current.momentum.x) > 0.001 ||
-			Math.abs(dragState.current.momentum.y) > 0.001
-		);
-	};
-
-	// Add this function to handle idle detection
-	const resetIdleTimer = () => {
-		if (idleTimerRef.current) {
-			clearTimeout(idleTimerRef.current);
-		}
-
-		// Don't reset idle state if we're in the transition period
-		if (!isTransitioning) {
-			setIsIdle(false);
-			idleTimerRef.current = setTimeout(() => {
-				// Only start auto-rotation if not dragging, not animating, and no momentum
-				if (!dragState.current.isDragging && !isAnimating && !hasMomentum()) {
-					setIsIdle(true);
-				}
-			}, 3000);
-		}
-	};
 
 	// Add cleanup for idle timer
 	useEffect(() => {
@@ -643,7 +626,7 @@ function GlobeMesh({
 	const EQUATOR_ROTATION_SPEED = 0.005; // Adjust this value to control speed of equator alignment
 
 	// Replace the ripple section in useFrame with this updated version
-	useFrame((state, delta) => {
+	useFrame(() => {
 		if (dragState.current.isDragging) {
 			resetIdleTimer();
 			// Cap rotation.x (latitude)
@@ -768,7 +751,10 @@ function GlobeMesh({
 			}
 
 			// Process continents
-			const continentMesh = meshRef.current.children[2] as THREE.Mesh;
+			const continentMesh = meshRef.current.children[2] as THREE.Mesh<
+				THREE.BufferGeometry,
+				THREE.Material
+			>;
 			if (continentMesh && continentMesh.geometry) {
 				const continentGeometry = continentMesh.geometry.attributes.position;
 				if (originalPositionsRef.current) {
@@ -898,7 +884,9 @@ function GlobeMesh({
 
 			{/* Updated continent outlines with glow effect */}
 			<lineSegments renderOrder={2}>
-				<primitive object={continentGeometry.outlineGeometry} />
+				<primitive
+					object={continentGeometry.outlineGeometry as THREE.BufferGeometry}
+				/>
 				<lineBasicMaterial
 					color={hoveredContinent !== null ? "#FFFFFF" : "#CCCCCC"}
 					linewidth={12}
@@ -921,17 +909,6 @@ function GlobeMesh({
 		</animated.mesh>
 	);
 }
-
-// Add after the interfaces and before the components
-const testCities: Location[] = [
-	{ city: "New York", coordinates: [40.7128, -74.006] }, // North America
-	{ city: "São Paulo", coordinates: [-23.5505, -46.6333] }, // South America
-	{ city: "London", coordinates: [51.5074, -0.1278] }, // Europe
-	{ city: "Tokyo", coordinates: [35.6762, 139.6503] }, // Asia
-	{ city: "Cairo", coordinates: [30.0444, 31.2357] }, // Africa
-	{ city: "Sydney", coordinates: [-33.8688, 151.2093] }, // Australia
-	{ city: "McMurdo Station", coordinates: [-77.8419, 166.6863] }, // Antarctica
-];
 
 // Update the CSVVisualization component with better styling and debug info
 function GeoVisualization({ points }: { points: Array<[number, number]> }) {
@@ -1031,7 +1008,7 @@ export default function Globe() {
 		long: number;
 	}>({ lat: 0, long: 0 });
 	const [csvPoints, setCsvPoints] = useState<Array<[number, number]>>([]);
-	const [continentPaths, setContinentPaths] = useState<
+	const [, setContinentPaths] = useState<
 		Array<{
 			points: [number, number][];
 			elevation: number;
@@ -1048,7 +1025,7 @@ export default function Globe() {
 		async function loadData() {
 			try {
 				const response = await fetch("/ne_110m_land.json");
-				const data = await response.json();
+				const data: GeoJSONData = await response.json();
 				const continents = processGeoJSONData(data);
 
 				// Create paths with varying elevations for visual interest
@@ -1066,8 +1043,11 @@ export default function Globe() {
 
 				setContinentPaths(paths);
 				setCsvPoints(continents.flat());
-			} catch (error) {
-				console.error("Failed to load GeoJSON data:", error);
+			} catch (error: unknown) {
+				console.error(
+					"Failed to load GeoJSON data:",
+					error instanceof Error ? error.message : error
+				);
 				setContinentPaths([]);
 				setCsvPoints([]);
 			}
@@ -1075,23 +1055,6 @@ export default function Globe() {
 
 		loadData();
 	}, []);
-
-	function testNextCity(event: React.MouseEvent<HTMLButtonElement>): void {
-		// Select a random city from testCities
-		const randomIndex = Math.floor(Math.random() * testCities.length);
-		const selectedCity = testCities[randomIndex];
-
-		// Update the focused location
-		setFocusedLocation(selectedCity);
-
-		// Update the current coordinates
-		setCurrentCoords({
-			lat: selectedCity.coordinates[0],
-			long: selectedCity.coordinates[1],
-		});
-
-		// Optionally, trigger any additional actions or animations here
-	}
 
 	return (
 		<div

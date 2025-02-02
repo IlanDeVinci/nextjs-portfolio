@@ -23,10 +23,10 @@ export const sendEmailService = async (
 			throw new Error("No access token received");
 		}
 
-		const transportOptions: any = {
+		const transportOptions = {
 			service: "gmail",
 			auth: {
-				type: "OAuth2",
+				type: "OAuth2" as const,
 				user: googleEmailConfig.email,
 				clientId: googleEmailConfig.clientId,
 				refreshToken: googleEmailConfig.refreshToken,
@@ -44,8 +44,12 @@ export const sendEmailService = async (
 			html,
 		};
 		await smtpTransport.sendMail(mailOptions);
-	} catch (error: any) {
-		console.error("Email service error:", error.message);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Email service error:", error.message);
+		} else {
+			console.error("Email service error:", String(error));
+		}
 		throw error;
 	}
 };

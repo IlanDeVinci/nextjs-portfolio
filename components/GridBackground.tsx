@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 const GridBackground = () => {
 	return (
 		<div className="grid-background absolute inset-0 z-0">
