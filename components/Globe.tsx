@@ -215,6 +215,14 @@ function reducePoints(
 	return features.map((points) => mergePointsInRadius(points));
 }
 
+interface SwipeState {
+	startX: number;
+	startY: number;
+	startTime: number;
+	velocityX: number;
+	velocityY: number;
+}
+
 function GlobeMesh({
 	position,
 	onLocationUpdate,
@@ -830,31 +838,104 @@ function GlobeMesh({
 	};
 
 	// Add touch handlers
+	const [swipeState, setSwipeState] = useState<SwipeState | null>(null);
+	const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Update the handleTouchStart function
 	const handleTouchStart = (e: React.TouchEvent) => {
-		if (!dragStartRef.current && e.touches.length === 1) {
-			const touch = e.touches[0];
-			dragStartRef.current = { x: touch.clientX, y: touch.clientY };
-			dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
+		e.preventDefault();
+		const touch = e.touches[0];
+
+		setSwipeState({
+			startX: touch.clientX,
+			startY: touch.clientY,
+			startTime: Date.now(),
+			velocityX: 0,
+			velocityY: 0,
+		});
+
+		dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+		dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
+
+		// Clear any existing swipe momentum
+		if (swipeTimeoutRef.current) {
+			clearTimeout(swipeTimeoutRef.current);
 		}
 	};
 
+	// Update the handleTouchMove function
 	const handleTouchMove = (e: React.TouchEvent) => {
-		if (dragStartRef.current && e.touches.length === 1) {
-			const touch = e.touches[0];
-			const deltaX = touch.clientX - dragState.current.lastPosition.x;
-			const deltaY = touch.clientY - dragState.current.lastPosition.y;
+		e.preventDefault();
+		if (!swipeState || !dragStartRef.current) return;
 
-			dragState.current.isDragging = true;
-			dragState.current.rotation.y += deltaX * 0.005;
-			dragState.current.rotation.x += deltaY * 0.005;
-			dragState.current.momentum = {
-				x: deltaY * 0.005 * 0.1,
-				y: deltaX * 0.005 * 0.1,
-			};
+		const touch = e.touches[0];
+		const deltaX = touch.clientX - dragState.current.lastPosition.x;
+		const deltaY = touch.clientY - dragState.current.lastPosition.y;
+		const deltaTime = (Date.now() - swipeState.startTime) / 1000; // Convert to seconds
 
-			dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
-		}
+		// Calculate instantaneous velocity
+		const velocityX = deltaX / deltaTime;
+		const velocityY = deltaY / deltaTime;
+
+		setSwipeState((prev) => ({
+			...prev!,
+			velocityX: velocityX * 0.5, // Dampen the velocity for smoother rotation
+			velocityY: velocityY * 0.5,
+		}));
+
+		// Update globe rotation
+		dragState.current.isDragging = true;
+		dragState.current.rotation.y += deltaX * 0.005;
+		dragState.current.rotation.x += deltaY * 0.005;
+
+		// Update last position
+		dragState.current.lastPosition = { x: touch.clientX, y: touch.clientY };
 	};
+
+	// Update the handleTouchEnd function
+	const handleTouchEnd = (e: React.TouchEvent) => {
+		e.preventDefault();
+		if (!swipeState) return;
+
+		// Apply momentum based on final velocity
+		dragState.current.momentum = {
+			x: swipeState.velocityY * 0.0001, // Adjust these multipliers to control momentum strength
+			y: swipeState.velocityX * 0.0001,
+		};
+
+		// Gradually reduce momentum
+		const applyMomentum = () => {
+			dragState.current.momentum.x *= 0.95;
+			dragState.current.momentum.y *= 0.95;
+
+			// Stop momentum when it gets very small
+			if (
+				Math.abs(dragState.current.momentum.x) < 0.0001 &&
+				Math.abs(dragState.current.momentum.y) < 0.0001
+			) {
+				dragState.current.momentum = { x: 0, y: 0 };
+				return;
+			}
+
+			swipeTimeoutRef.current = setTimeout(applyMomentum, 16); // ~60fps
+		};
+
+		applyMomentum();
+
+		// Reset states
+		dragState.current.isDragging = false;
+		dragStartRef.current = null;
+		setSwipeState(null);
+	};
+
+	// Add cleanup for swipe timeout in useEffect
+	useEffect(() => {
+		return () => {
+			if (swipeTimeoutRef.current) {
+				clearTimeout(swipeTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	return (
 		<animated.mesh
@@ -865,7 +946,7 @@ function GlobeMesh({
 			onPointerDown={handlePointerDown}
 			onTouchStart={handleTouchStart}
 			onTouchMove={handleTouchMove}
-			onTouchEnd={handlePointerUp}
+			onTouchEnd={handleTouchEnd}
 			userData={{
 				isHovered: hovered,
 				isDragging,

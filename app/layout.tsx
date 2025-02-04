@@ -28,8 +28,56 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-	title: "My Portfolio",
-	description: "A showcase of my skills and projects",
+	title: {
+		default: "Ilan's Portfolio | Full Stack Developer",
+		template: "%s | Ilan's Portfolio",
+	},
+	description:
+		"Full Stack Developer specializing in React, Next.js, and modern web technologies. Explore my projects, skills, and professional experience.",
+	keywords: [
+		"Full Stack Developer",
+		"React",
+		"Next.js",
+		"Web Development",
+		"Software Engineer",
+		"Portfolio",
+		"JavaScript",
+		"TypeScript",
+	],
+	authors: [{ name: "Ilan" }],
+	creator: "Ilan",
+	publisher: "Ilan",
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			"max-video-preview": -1,
+			"max-image-preview": "large",
+			"max-snippet": -1,
+		},
+	},
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		url: "https://your-domain.com",
+		siteName: "Ilan's Portfolio",
+		title: "Ilan's Portfolio | Full Stack Developer",
+		description:
+			"Full Stack Developer specializing in React, Next.js, and modern web technologies.",
+		images: [
+			{
+				url: "https://your-domain.com/og-image.jpg",
+				width: 1200,
+				height: 630,
+				alt: "Ilan's Portfolio",
+			},
+		],
+	},
+	verification: {
+		google: "your-google-verification-code",
+	},
 };
 
 export default function RootLayout({
