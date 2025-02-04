@@ -202,8 +202,8 @@ const Skills = () => {
 	return (
 		<section
 			id="skills"
-			className="py-4 sm:py-8 relative z-10 min-h-screen">
-			<div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-8">
+			className="py-4 sm:py-8 relative z-10 min-h-screen w-full">
+			<div className="max-w-6xl mx-auto px-1 sm:px-6 lg:px-8">
 				<motion.h2
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
@@ -211,7 +211,7 @@ const Skills = () => {
 					className="text-xl sm:text-2xl font-space font-bold text-center text-white mb-4 sm:mb-6">
 					My Skills
 				</motion.h2>
-				<div className="grid grid-cols-3 xs:grid-cols-3 sm:flex sm:justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
+				<div className="grid grid-cols-2 xs:grid-cols-3 sm:flex sm:justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
 					{/* Category tabs */}
 					{(Object.keys(skillsByCategory) as Array<keyof SkillCategories>).map(
 						(category) => (
@@ -219,7 +219,7 @@ const Skills = () => {
 								key={category}
 								onClick={() => setActiveCategory(category)}
 								className={cn(
-									"px-2 py-3 rounded-full text-[10px] sm:text-sm font-medium whitespace-nowrap font-manrope",
+									"px-1.5 py-2 sm:px-2 sm:py-3 rounded-full text-[10px] sm:text-sm font-medium whitespace-nowrap font-manrope w-full sm:w-auto",
 									activeCategory === category
 										? "bg-purple-500/20 text-white"
 										: "text-purple-200 hover:text-white"
@@ -238,11 +238,11 @@ const Skills = () => {
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -20 }}
 						transition={{ duration: 0.5 }}
-						className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+						className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 w-full px-1 sm:px-0">
 						{skillsByCategory[activeCategory].map((skill) => (
 							<motion.div
 								key={skill.name}
-								className="relative h-[140px] xs:h-[140px] sm:h-[160px] w-full max-w-[280px] mx-auto perspective-1000 cursor-pointer"
+								className="relative h-[120px] xs:h-[140px] sm:h-[160px] w-full"
 								whileHover={{ scale: 1.02 }}
 								onClick={() => handleCardClick(skill.name)}
 								onMouseEnter={() => setHoveredCard(skill.name)}
