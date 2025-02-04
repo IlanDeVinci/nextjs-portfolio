@@ -257,7 +257,8 @@ const TerminalWindow = ({
 						onPositionChange({
 							x:
 								resizeState.startPos.x +
-								(resizeState.startSize.width - newWidth),
+								(resizeState.startSize.width - newWidth) +
+								-4, // Add 4px for left border
 							y: position.y,
 						});
 						break;
