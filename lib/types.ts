@@ -6,12 +6,14 @@ type GOOGLE_MAIL_SERVICE_KEYS =
 	| "clientSecret"
 	| "refreshToken"
 	| "redirectUri"
-	| "email";
+	| "email"
+	| "googleAppPassword";
 
-export const googleEmailConfig: Record<GOOGLE_MAIL_SERVICE_KEYS, string> = {
-	clientId: process.env.GOOGLE_CLIENT_ID || "",
-	clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-	refreshToken: process.env.GOOGLE_REFRESH_TOKEN || "",
-	redirectUri: process.env.GOOGLE_REDIRECT_URI || "",
-	email: process.env.GOOGLE_EMAIL || "",
-};
+export const googleEmailConfig = {
+	email: process.env.GOOGLE_EMAIL!,
+	googleAppPassword: process.env.GOOGLE_APP_PASSWORD!,
+} as const;
+
+if (!googleEmailConfig.email || !googleEmailConfig.googleAppPassword) {
+	throw new Error("Missing email configuration");
+}
