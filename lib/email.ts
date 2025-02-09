@@ -1,7 +1,7 @@
 "use server";
 
 import { createTransport } from "nodemailer";
-import { googleEmailConfig } from "./types";
+import { googleEmailConfig } from "./config";
 
 export const sendEmailService = async (
 	to: string,
