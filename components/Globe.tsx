@@ -942,11 +942,6 @@ function GlobeMesh({
 
 // Update the CSVVisualization component with better styling and debug info
 function GeoVisualization({ points }: { points: Array<[number, number]> }) {
-	// Add console log for debugging
-	useEffect(() => {
-		console.log(`Rendering ${points.length} points`);
-	}, [points]);
-
 	return (
 		<div className="w-full h-64 bg-purple-900/20 backdrop-blur-sm rounded-lg relative overflow-hidden border border-white/10">
 			{points.length > 0 ? (
