@@ -5,7 +5,6 @@ A modern, responsive portfolio website built with Next.js and Tailwind CSS.
 ## 🚀 Features
 
 - **Responsive Design** - Looks great on all devices
-- **Dark/Light Mode** - Toggle between theme preferences
 - **Fast Performance** - Optimized loading with Next.js
 - **SEO Friendly** - Built with best practices for search engines
 - **Modern UI** - Clean, professional interface using Tailwind CSS
